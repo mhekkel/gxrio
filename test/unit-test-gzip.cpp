@@ -50,7 +50,7 @@ BOOST_AUTO_TEST_CASE(t_c)
 		}
 	} buffer(reinterpret_cast<char *>(kGZippedData), sizeof(kGZippedData));
 
-	gxrio::gzip::istream in(&buffer);
+	gxrio::istream in(&buffer);
 
 	std::string line;
 	std::getline(in, line);
@@ -64,7 +64,7 @@ BOOST_AUTO_TEST_CASE(t_1)
 {
 	fs::path f = gTestDir / "hello.txt.gz";
 
-	gxrio::gzip::ifstream in(f, std::ios::in | std::ios::binary);
+	gxrio::ifstream in(f, std::ios::in | std::ios::binary);
 
 	std::string line;
 	std::getline(in, line);
@@ -79,7 +79,7 @@ BOOST_AUTO_TEST_CASE(t_100)
 {
 	fs::path f = gTestDir / "hello-100.txt.gz";
 
-	gxrio::gzip::ifstream in(f, std::ios::in | std::ios::binary);
+	gxrio::ifstream in(f, std::ios::in | std::ios::binary);
 
 	std::string line;
 
@@ -99,7 +99,7 @@ BOOST_AUTO_TEST_CASE(t_1000)
 {
 	fs::path f = gTestDir / "hello-1000.txt.gz";
 
-	gxrio::gzip::ifstream in(f, std::ios::in | std::ios::binary);
+	gxrio::ifstream in(f, std::ios::in | std::ios::binary);
 
 	std::string line;
 
@@ -128,9 +128,9 @@ BOOST_AUTO_TEST_CASE(t_copy_1)
 		}
 	} buffer(reinterpret_cast<char *>(kGZippedData), sizeof(kGZippedData));
 
-	gxrio::gzip::istream in(&buffer);
+	gxrio::istream in(&buffer);
 
-	gxrio::gzip::istream in2(std::move(in));
+	gxrio::istream in2(std::move(in));
 
 	std::string line;
 	std::getline(in2, line);
@@ -142,18 +142,18 @@ BOOST_AUTO_TEST_CASE(t_copy_2)
 {
 	fs::path f = gTestDir / "hello-1000.txt.gz";
 
-	gxrio::gzip::ifstream in_1(f, std::ios::in | std::ios::binary);
+	gxrio::ifstream in_1(f, std::ios::in | std::ios::binary);
 
 	std::string line;
 
 	std::getline(in_1, line);
 	BOOST_CHECK_EQUAL(line, "Hello, world! - this is line 0");
 
-	gxrio::gzip::ifstream in_2(std::move(in_1));
+	gxrio::ifstream in_2(std::move(in_1));
 	std::getline(in_2, line);
 	BOOST_CHECK_EQUAL(line, "Hello, world! - this is line 1");
 
-	gxrio::gzip::ifstream in_3;
+	gxrio::ifstream in_3;
 	in_3 = std::move(in_2);
 	std::getline(in_3, line);
 	BOOST_CHECK_EQUAL(line, "Hello, world! - this is line 2");
@@ -197,7 +197,7 @@ BOOST_AUTO_TEST_CASE(d_1)
 {
 	ArrayedStreamBuffer<100> buffer;
 
-	gxrio::gzip::basic_ogzip_streambuf<char, std::char_traits<char>> zb;
+	gxrio::basic_ogzip_streambuf<char, std::char_traits<char>> zb;
 	zb.init(&buffer);
 
 	zb.sputn("Hello, world!", 13);
@@ -206,7 +206,7 @@ BOOST_AUTO_TEST_CASE(d_1)
 
 	buffer.reading();
 
-	gxrio::gzip::istream in(&buffer);
+	gxrio::istream in(&buffer);
 
 	std::string line;
 	std::getline(in, line);
@@ -221,8 +221,8 @@ BOOST_AUTO_TEST_CASE(d_2)
 	fs::path in_file = gTestDir / filename;
 	fs::path out_file = fs::temp_directory_path() / filename;
 
-	gxrio::gzip::ifstream in;
-	gxrio::gzip::ofstream out;
+	gxrio::ifstream in;
+	gxrio::ofstream out;
 
 	in.open(in_file);
 	out.open(out_file);
@@ -239,7 +239,7 @@ BOOST_AUTO_TEST_CASE(d_2)
 	out.close();
 
 	in.open(in_file);
-	gxrio::gzip::ifstream in_test(out_file);
+	gxrio::ifstream in_test(out_file);
 
 	BOOST_ASSERT(in.is_open());
 	BOOST_ASSERT(in_test.is_open());
@@ -270,16 +270,16 @@ BOOST_AUTO_TEST_CASE(d_3)
 {
 	ArrayedStreamBuffer<100> buffer;
 
-	gxrio::gzip::basic_ogzip_streambuf<char, std::char_traits<char>> zb;
+	gxrio::basic_ogzip_streambuf<char, std::char_traits<char>> zb;
 	zb.init(&buffer);
 
 	zb.sputn("aap ", 4);
 
-	gxrio::gzip::basic_ogzip_streambuf<char, std::char_traits<char>> zb2(std::move(zb));
+	gxrio::basic_ogzip_streambuf<char, std::char_traits<char>> zb2(std::move(zb));
 
 	zb2.sputn("noot ", 5);
 
-	gxrio::gzip::basic_ogzip_streambuf<char, std::char_traits<char>> zb3;
+	gxrio::basic_ogzip_streambuf<char, std::char_traits<char>> zb3;
 
 	zb3 = std::move(zb2);
 
@@ -289,7 +289,7 @@ BOOST_AUTO_TEST_CASE(d_3)
 
 	buffer.reading();
 
-	gxrio::gzip::istream in(&buffer);
+	gxrio::istream in(&buffer);
 
 	std::string line;
 	std::getline(in, line);

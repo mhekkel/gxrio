@@ -1,11 +1,9 @@
-//[ zcat_replacement
-
 #include <iostream>
-#include <zstream/zstream.hpp>
+#include <gxrio.hpp>
 
 int main(int argc, char * const argv[])
 {
-	zstream::ifstream in(argv[1]);
+	gxrio::ifstream in(argv[1]);
 
 	if (not in.is_open())
 	{
@@ -19,4 +17,3 @@ int main(int argc, char * const argv[])
 
 	return 0;
 }
-//]

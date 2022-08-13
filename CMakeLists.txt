@@ -16,7 +16,6 @@ set(CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD 17 CACHE STRING "The minimum version of C++ required for this library")
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-option(BUILD_DOCUMENTATION "Build documentation files" OFF)
 option(ENABLE_TESTING "Build the unit test applications" OFF)
 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
@@ -76,14 +75,9 @@ write_basic_package_version_file("${version_config}"
 
 install(TARGETS gxrio
 	EXPORT gxrioConfig
-	PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/gxrio)
+	PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 export(TARGETS gxrio NAMESPACE gxrio:: FILE gxrioTargets.cmake)
-
-install(DIRECTORY include/gxrio
-	DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-	COMPONENT Devel
-)
 
 if(WIN32 AND NOT CYGWIN)
 	set(CONFIG_LOC CMake)
@@ -127,63 +121,3 @@ if(ENABLE_TESTING)
 			COMMAND $<TARGET_FILE:${TEST}> -- ${CMAKE_SOURCE_DIR}/test)
 	endforeach()
 endif(ENABLE_TESTING)
-
-# Documentation
-if(BUILD_DOCUMENTATION)
-	find_program(DOXYGEN doxygen)
-	find_program(QUICKBOOK quickbook)
-	find_program(XSLTPROC xsltproc)
-	find_program(FOP fop)
-	find_program(BJAM bjam)
-
-	if(NOT DOXYGEN)
-		list(APPEND MISSING_DOC_TOOL_LIST doxygen)
-	endif()
-
-	if(NOT QUICKBOOK)
-		list(APPEND MISSING_DOC_TOOL_LIST quickbook)
-	endif()
-
-	if(NOT XSLTPROC)
-		list(APPEND MISSING_DOC_TOOL_LIST xsltproc)
-	endif()
-
-	if(NOT FOP)
-		list(APPEND MISSING_DOC_TOOL_LIST fop)
-	endif()
-
-	if(NOT BJAM)
-		list(APPEND MISSING_DOC_TOOL_LIST bjam)
-	endif()
-
-	if(DEFINED MISSING_DOC_TOOL_LIST)
-		list(JOIN MISSING_DOC_TOOL_LIST ", " MISSING_DOC_TOOLS)
-		message(FATAL_ERROR "Cannot create documentation since the following applications could not be found: ${MISSING_DOC_TOOLS}")
-	endif()
-
-	make_directory(doc)
-
-	if(UNIX)
-		set(QUICKBOOK_SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/quickbook.sh")
-
-		configure_file(${CMAKE_SOURCE_DIR}/doc/tools/quickbook.sh.in
-			${CMAKE_CURRENT_BINARY_DIR}/tmp/quickbook.sh
-			@ONLY)
-		file(COPY ${CMAKE_CURRENT_BINARY_DIR}/tmp/quickbook.sh
-			DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
-			FILE_PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ)
-		file(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/tmp/)
-	else()
-		set(QUICKBOOK_SCRIPT ${QUICKBOOK})
-	endif()
-
-	configure_file(${CMAKE_SOURCE_DIR}/doc/Jamfile.v2.in ${CMAKE_SOURCE_DIR}/doc/Jamfile.v2 @ONLY)
-
-	add_custom_command(OUTPUT ${CMAKE_SOURCE_DIR}/doc/html/index.html
-		${CMAKE_SOURCE_DIR}/doc/html ${CMAKE_SOURCE_DIR}/doc/bin
-		${CMAKE_SOURCE_DIR}/doc/autodoc.xml
-		COMMAND ${BJAM} ${CMAKE_SOURCE_DIR}/doc
-		DEPENDS ${CMAKE_SOURCE_DIR}/doc/Jamfile.v2)
-	add_custom_target(doc ALL DEPENDS ${CMAKE_SOURCE_DIR}/doc/html/index.html)
-	install(DIRECTORY ${CMAKE_SOURCE_DIR}/doc/html DESTINATION ${CMAKE_INSTALL_DOCDIR}/${PACKAGE_NAME})
-endif()

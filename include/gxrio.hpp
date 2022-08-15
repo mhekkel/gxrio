@@ -223,7 +223,7 @@ class basic_igzip_streambuf : public basic_streambuf<CharT, Traits>
 
   private:
 	/// \brief The actual work is done here.
-	int_type underflow()
+	int_type underflow() override
 	{
 		if (m_zstream and this->m_upstream)
 		{
@@ -400,7 +400,7 @@ class basic_ogzip_streambuf : public basic_streambuf<CharT, Traits>
 	///
 	/// \param ch The character that did not fit, in case it is eof we need to flush
 	///
-	int_type overflow(int_type ch)
+	int_type overflow(int_type ch) override
 	{
 		if (not m_zstream)
 			return traits_type::eof();
@@ -577,7 +577,7 @@ class basic_ixz_streambuf : public basic_streambuf<CharT, Traits>
 
   private:
 	/// \brief The actual work is done here.
-	int_type underflow()
+	int_type underflow() override
 	{
 		if (m_xzstream and this->m_upstream)
 		{
@@ -734,7 +734,7 @@ class basic_oxz_streambuf : public basic_streambuf<CharT, Traits>
 	///
 	/// \param ch The character that did not fit, in case it is eof we need to flush
 	///
-	int_type overflow(int_type ch)
+	int_type overflow(int_type ch) override
 	{
 		if (not m_xzstream)
 			return traits_type::eof();
@@ -851,12 +851,14 @@ class basic_istream : public std::basic_istream<CharT, Traits>
 	/// This constructor will initialize the zlib code with the \a buf streambuf.
 
 	explicit basic_istream(upstreambuf_type *buf)
+		: base_type(nullptr)
 	{
 		init_z(buf);
 	}
 
   protected:
-	basic_istream() = default;
+	basic_istream()
+		: base_type(nullptr) {}
 
 	/// \brief Initialise internals with streambuf \a sb
 	/// \param sb The upstream streambuf class
@@ -1152,7 +1154,8 @@ class basic_ostream : public std::basic_ostream<CharT, Traits>
 	// }
 
   protected:
-	basic_ostream() = default;
+	basic_ostream()
+		: base_type(nullptr) {}
 
 	/// \brief Initialise internals with streambuf \a sb
 	void init_z(std::streambuf *sb)

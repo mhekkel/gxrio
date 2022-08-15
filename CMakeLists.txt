@@ -10,7 +10,6 @@ project(gxrio VERSION 1.0.0 LANGUAGES CXX)
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
-include(FindPkgConfig)
 
 set(CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD 17 CACHE STRING "The minimum version of C++ required for this library")
@@ -43,7 +42,7 @@ if(MSVC)
 endif()
 
 find_package(ZLIB REQUIRED)
-pkg_check_modules(LZMA liblzma REQUIRED)
+find_package(LibLZMA REQUIRED)
 
 add_library(gxrio INTERFACE)
 add_library(gxrio::gxrio ALIAS gxrio)

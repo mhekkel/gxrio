@@ -26,9 +26,7 @@ endmacro()
 
 include(CMakeFindDependencyMacro)
 find_dependency(ZLIB REQUIRED)
-
-find_dependency(PkgConfig)
-pkg_check_modules(LZMA liblzma REQUIRED)
+find_dependency(LibLZMA REQUIRED)
 
 INCLUDE("${CMAKE_CURRENT_LIST_DIR}/gxrioTargets.cmake")
 

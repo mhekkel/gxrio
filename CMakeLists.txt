@@ -86,8 +86,8 @@ else()
 endif()
 
 configure_package_config_file(
-	${CMAKE_SOURCE_DIR}/cmake/gxrioConfig.cmake.in
-	${CMAKE_SOURCE_DIR}/cmake/gxrioConfig.cmake
+	${PROJECT_SOURCE_DIR}/cmake/gxrioConfig.cmake.in
+	${PROJECT_SOURCE_DIR}/cmake/gxrioConfig.cmake
 	INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/gxrio
 	PATH_VARS INCLUDE_INSTALL_DIR
 )
@@ -118,6 +118,6 @@ if(ENABLE_TESTING)
 		endif()
 
 		add_test(NAME ${TEST}
-			COMMAND $<TARGET_FILE:${TEST}> -- ${CMAKE_SOURCE_DIR}/test)
+			COMMAND $<TARGET_FILE:${TEST}> -- ${PROJECT_SOURCE_DIR}/test)
 	endforeach()
 endif(ENABLE_TESTING)

@@ -10,7 +10,6 @@ project(gxrio VERSION 1.0.0 LANGUAGES CXX)
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
-include(FindPkgConfig)
 
 set(CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD 17 CACHE STRING "The minimum version of C++ required for this library")
@@ -43,7 +42,7 @@ if(MSVC)
 endif()
 
 find_package(ZLIB REQUIRED)
-pkg_check_modules(LZMA liblzma REQUIRED)
+find_package(LibLZMA REQUIRED)
 
 add_library(gxrio INTERFACE)
 add_library(gxrio::gxrio ALIAS gxrio)
@@ -59,7 +58,7 @@ target_sources(gxrio INTERFACE
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>$<INSTALL_INTERFACE:include>/gxrio.hpp
 )
 
-target_link_libraries(gxrio INTERFACE ZLIB::ZLIB ${LZMA_LIBRARIES})
+target_link_libraries(gxrio INTERFACE ZLIB::ZLIB LibLZMA::LibLZMA)
 
 set_target_properties(gxrio PROPERTIES PUBLIC_HEADER include/gxrio.hpp)
 
@@ -103,6 +102,8 @@ install(
 if(ENABLE_TESTING)
 	enable_testing()
 
+	find_package(Boost REQUIRED)
+
 	list(APPEND tests unit-test unit-test-gzip unit-test-xz)
 
 	foreach(TEST IN LISTS tests)
@@ -110,7 +111,7 @@ if(ENABLE_TESTING)
 
 		add_executable(${TEST} ${TEST_SOURCE})
 
-		target_link_libraries(${TEST} gxrio::gxrio)
+		target_link_libraries(${TEST} gxrio::gxrio Boost::boost)
 
 		if(MSVC)
 			# Specify unwind semantics so that MSVC knowns how to handle exceptions

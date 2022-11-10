@@ -174,7 +174,7 @@ class ArrayedStreamBuffer : public std::basic_streambuf<CharT>
 	ArrayedStreamBuffer()
 		: buffer_{} // value-initialize buffer_ to all zeroes
 	{
-		Base::setp(buffer_.begin(), buffer_.end()); // set std::basic_streambuf
+		Base::setp(buffer_.data(), buffer_.data() + buffer_.size()); // set std::basic_streambuf
 		                                            // put area pointers to work with 'buffer_'
 	}
 

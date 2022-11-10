@@ -19,6 +19,7 @@ namespace fs = std::filesystem;
 
 fs::path gTestDir = fs::current_path(); // filled in first test
 
+#if HAVE_LibLZMA
 unsigned char kXZData[] = {
 	0xfd, 0x37, 0x7a, 0x58, 0x5a, 0x00, 0x00, 0x04, 0xe6, 0xd6, 0xb4, 0x46, 0x02, 0x00, 0x21, 0x01, 
 	0x16, 0x00, 0x00, 0x00, 0x74, 0x2f, 0xe5, 0xa3, 0x01, 0x00, 0x0d, 0x48, 0x65, 0x6c, 0x6c, 0x6f, 
@@ -26,6 +27,7 @@ unsigned char kXZData[] = {
 	0x17, 0xf6, 0x0c, 0xca, 0x00, 0x01, 0x26, 0x0e, 0x08, 0x1b, 0xe0, 0x04, 0x1f, 0xb6, 0xf3, 0x7d, 
 	0x01, 0x00, 0x00, 0x00, 0x00, 0x04, 0x59, 0x5a
 };
+#endif
 
 unsigned char kGZippedData[] = {
 	0x1f, 0x8b, 0x08, 0x08, 0x61, 0xb2, 0xf0, 0x62, 0x00, 0x03, 0x74, 0x65, 0x73, 0x74, 0x2e, 0x74,
@@ -40,6 +42,8 @@ bool init_unit_test()
 	// not a test, just initialize test dir
 	if (boost::unit_test::framework::master_test_suite().argc == 2)
 		gTestDir = boost::unit_test::framework::master_test_suite().argv[1];
+	else if (fs::current_path().filename().string() == "Debug" or fs::current_path().filename().string() == "Release")
+		gTestDir = fs::current_path().parent_path().parent_path() / "test";
 
 	return true;
 }
@@ -48,10 +52,16 @@ bool init_unit_test()
 
 BOOST_AUTO_TEST_CASE(t_1)
 {
-	for (fs::path f : { gTestDir / "hello.txt.gz", gTestDir / "hello.txt.xz", gTestDir / "hello.txt" })
+	for (fs::path f : {
+		gTestDir / "hello.txt.gz",
+#if HAVE_LibLZMA
+		gTestDir / "hello.txt.xz",
+#endif
+		gTestDir / "hello.txt" })
 	{
 		std::filebuf fb;
 		fb.open(f, std::ios::in | std::ios::binary);
+		BOOST_CHECK(fb.is_open());
 
 		gxrio::istream is(&fb);
 
@@ -67,9 +77,15 @@ BOOST_AUTO_TEST_CASE(t_1)
 
 BOOST_AUTO_TEST_CASE(t_2)
 {
-	for (fs::path f : { gTestDir / "hello.txt.gz", gTestDir / "hello.txt.xz", gTestDir / "hello.txt" })
+	for (fs::path f : {
+		gTestDir / "hello.txt.gz",
+#if HAVE_LibLZMA
+		gTestDir / "hello.txt.xz",
+#endif
+		gTestDir / "hello.txt" })
 	{
 		gxrio::ifstream is(f);
+		BOOST_CHECK(is.is_open());
 
 		std::string line;
 
@@ -83,11 +99,18 @@ BOOST_AUTO_TEST_CASE(t_2)
 
 BOOST_AUTO_TEST_CASE(t_3)
 {
-	for (fs::path f : { gTestDir / "hello.txt.gz", gTestDir / "hello.txt.xz", gTestDir / "hello.txt" })
+	for (fs::path f : {
+		gTestDir / "hello.txt.gz",
+#if HAVE_LibLZMA
+		gTestDir / "hello.txt.xz",
+#endif
+		gTestDir / "hello.txt" })
 	{
 		gxrio::ifstream is1(f);
+		BOOST_CHECK(is1.is_open());
 
 		gxrio::ifstream is2(std::move(is1));
+		BOOST_CHECK(is2.is_open());
 
 		std::string line;
 
@@ -101,13 +124,20 @@ BOOST_AUTO_TEST_CASE(t_3)
 
 BOOST_AUTO_TEST_CASE(t_4)
 {
-	for (fs::path f : { gTestDir / "hello.txt.gz", gTestDir / "hello.txt.xz", gTestDir / "hello.txt" })
+	for (fs::path f : {
+		gTestDir / "hello.txt.gz",
+#if HAVE_LibLZMA
+		gTestDir / "hello.txt.xz",
+#endif
+		gTestDir / "hello.txt" })
 	{
 		gxrio::ifstream is1(f);
+		BOOST_CHECK(is1.is_open());
 
 		gxrio::ifstream is2;
 		
 		is2 = std::move(is1);
+		BOOST_CHECK(is2.is_open());
 
 		std::string line;
 
@@ -125,15 +155,19 @@ BOOST_AUTO_TEST_CASE(t_5)
 
 	for (fs::path f : {
 		std::filesystem::temp_directory_path() / "gxrio-unit-test" / "hello.txt.gz",
+#if HAVE_LibLZMA
 		std::filesystem::temp_directory_path() / "gxrio-unit-test" / "hello.txt.xz",
+#endif
 		std::filesystem::temp_directory_path() / "gxrio-unit-test" / "hello.txt" })
 	{
 		gxrio::ofstream out(f);
+		BOOST_CHECK(out.is_open());
 
 		out << "Hello, world!" << std::endl;
 		out.close();
 
 		gxrio::ifstream in(f);
+		BOOST_CHECK(in.is_open());
 
 		std::string line;
 
@@ -151,12 +185,16 @@ BOOST_AUTO_TEST_CASE(t_6)
 
 	for (fs::path f : {
 		std::filesystem::temp_directory_path() / "gxrio-unit-test" / "hello.txt.gz",
+#if HAVE_LibLZMA
 		std::filesystem::temp_directory_path() / "gxrio-unit-test" / "hello.txt.xz",
+#endif
 		std::filesystem::temp_directory_path() / "gxrio-unit-test" / "hello.txt" })
 	{
 		gxrio::ofstream out_1(f);
+		BOOST_CHECK(out_1.is_open());
 
 		gxrio::ofstream out_2(std::move(out_1));
+		BOOST_CHECK(out_2.is_open());
 
 		out_2 << "Hello, world!" << std::endl;
 		out_2.close();
@@ -179,13 +217,17 @@ BOOST_AUTO_TEST_CASE(t_7)
 
 	for (fs::path f : {
 		std::filesystem::temp_directory_path() / "gxrio-unit-test" / "hello.txt.gz",
+#if HAVE_LibLZMA
 		std::filesystem::temp_directory_path() / "gxrio-unit-test" / "hello.txt.xz",
+#endif
 		std::filesystem::temp_directory_path() / "gxrio-unit-test" / "hello.txt" })
 	{
 		gxrio::ofstream out_1(f);
+		BOOST_CHECK(out_1.is_open());
 
 		gxrio::ofstream out_2;
 		out_2 = std::move(out_1);
+		BOOST_CHECK(out_2.is_open());
 
 		out_2 << "Hello, world!" << std::endl;
 		out_2.close();
@@ -207,7 +249,9 @@ BOOST_AUTO_TEST_CASE(t_8)
 	for (const auto &[text, length] : std::vector<std::tuple<const char *, size_t>>{
 		{ "Hello, world!", 13 },
 		{ (const char*)kGZippedData, sizeof(kGZippedData) },
+#if HAVE_LibLZMA
 		{ (const char*)kXZData, sizeof(kXZData) },
+#endif
 		{ "\xfd\x37Hello, world!", 15 },
 		{ "\x1fHello, world!", 14 }
 	 })

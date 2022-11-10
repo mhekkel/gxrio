@@ -41,8 +41,36 @@ if(MSVC)
 	add_definitions(-D_WIN32_WINNT=${ver})
 endif()
 
+if(MSVC)
+	# Avoid linking the shared library of zlib
+	# Search ZLIB_ROOT first if it is set.
+	if(ZLIB_ROOT)
+		set(_ZLIB_SEARCH_ROOT PATHS ${ZLIB_ROOT} NO_DEFAULT_PATH)
+		list(APPEND _ZLIB_SEARCHES _ZLIB_SEARCH_ROOT)
+	endif()
+
+	# Normal search.
+	set(_ZLIB_x86 "(x86)")
+	set(_ZLIB_SEARCH_NORMAL
+		PATHS "[HKEY_LOCAL_MACHINE\\SOFTWARE\\GnuWin32\\Zlib;InstallPath]"
+			"$ENV{ProgramFiles}/zlib"
+			"$ENV{ProgramFiles${_ZLIB_x86}}/zlib")
+	unset(_ZLIB_x86)
+	list(APPEND _ZLIB_SEARCHES _ZLIB_SEARCH_NORMAL)
+
+	foreach(search ${_ZLIB_SEARCHES})
+    	find_library(ZLIB_LIBRARY NAMES zlibstatic NAMES_PER_DIR ${${search}} PATH_SUFFIXES lib)
+	endforeach()
+endif()
 find_package(ZLIB REQUIRED)
-find_package(LibLZMA REQUIRED)
+list(APPEND GXRIO_LIBS ZLIB::ZLIB)
+
+find_package(LibLZMA)
+if(LibLZMA_FOUND)
+	list(APPEND GXRIO_LIBS LibLZMA::LibLZMA)
+else()
+	message(WARNING "LibLZMA not found, will continue with ZLib only")
+endif()
 
 add_library(gxrio INTERFACE)
 add_library(gxrio::gxrio ALIAS gxrio)
@@ -58,9 +86,10 @@ target_sources(gxrio INTERFACE
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>$<INSTALL_INTERFACE:include>/gxrio.hpp
 )
 
-target_link_libraries(gxrio INTERFACE ZLIB::ZLIB LibLZMA::LibLZMA)
+target_link_libraries(gxrio INTERFACE ${GXRIO_LIBS})
 
 set_target_properties(gxrio PROPERTIES PUBLIC_HEADER include/gxrio.hpp)
+target_compile_definitions(gxrio INTERFACE HAVE_LibLZMA=${LibLZMA_FOUND})
 
 # installation
 set(version_config "${CMAKE_CURRENT_BINARY_DIR}/gxrioConfigVersion.cmake")
@@ -104,7 +133,10 @@ if(ENABLE_TESTING)
 
 	find_package(Boost REQUIRED)
 
-	list(APPEND tests unit-test unit-test-gzip unit-test-xz)
+	list(APPEND tests unit-test unit-test-gzip)
+	if(LibLZMA_FOUND)
+		list(APPEND tests unit-test-xz)
+	endif()
 
 	foreach(TEST IN LISTS tests)
 		set(TEST_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/test/${TEST}.cpp")

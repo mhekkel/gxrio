@@ -11,8 +11,10 @@
 #include <memory>
 #include <utility>
 
-#include <lzma.h>
 #include <zlib.h>
+#if HAVE_LibLZMA
+#include <lzma.h>
+#endif
 
 /// \file gxrio.hpp
 ///
@@ -124,16 +126,16 @@ class basic_igzip_streambuf : public basic_streambuf<CharT, Traits>
 		std::swap(m_zstream, rhs.m_zstream);
 		std::swap(m_gzheader, rhs.m_gzheader);
 
-		auto p = std::copy(rhs.gptr(), rhs.egptr(), m_out_buffer.begin());
-		this->setg(m_out_buffer.begin(), m_out_buffer.begin(), p);
+		auto p = std::copy(rhs.gptr(), rhs.egptr(), m_out_buffer.data());
+		this->setg(m_out_buffer.data(), m_out_buffer.data(), p);
 
 		if (m_zstream and m_zstream->avail_in > 0)
 		{
 			auto next_in_offset = m_zstream->next_in - rhs.m_in_buffer.data();
-			std::copy(rhs.m_in_buffer.begin() + next_in_offset,
-				rhs.m_in_buffer.begin() + next_in_offset + m_zstream->avail_in,
-				m_in_buffer.begin());
-			m_zstream->next_in = m_in_buffer.begin();
+			std::copy(rhs.m_in_buffer.data() + next_in_offset,
+				rhs.m_in_buffer.data() + next_in_offset + m_zstream->avail_in,
+				m_in_buffer.data());
+			m_zstream->next_in = m_in_buffer.data();
 		}
 	}
 
@@ -147,16 +149,16 @@ class basic_igzip_streambuf : public basic_streambuf<CharT, Traits>
 		std::swap(m_zstream, rhs.m_zstream);
 		std::swap(m_gzheader, rhs.m_gzheader);
 
-		auto p = std::copy(rhs.gptr(), rhs.egptr(), m_out_buffer.begin());
-		this->setg(m_out_buffer.begin(), m_out_buffer.begin(), p);
+		auto p = std::copy(rhs.gptr(), rhs.egptr(), m_out_buffer.data());
+		this->setg(m_out_buffer.data(), m_out_buffer.data(), p);
 
 		if (m_zstream and m_zstream->avail_in > 0)
 		{
 			auto next_in_offset = m_zstream->next_in - reinterpret_cast<unsigned char *>(rhs.m_in_buffer.data());
-			std::copy(rhs.m_in_buffer.begin() + next_in_offset,
-				rhs.m_in_buffer.begin() + next_in_offset + m_zstream->avail_in,
-				m_in_buffer.begin());
-			m_zstream->next_in = reinterpret_cast<unsigned char *>(m_in_buffer.begin());
+			std::copy(rhs.m_in_buffer.data() + next_in_offset,
+				rhs.m_in_buffer.data() + next_in_offset + m_zstream->avail_in,
+				m_in_buffer.data());
+			m_zstream->next_in = reinterpret_cast<unsigned char *>(m_in_buffer.data());
 		}
 
 		return *this;
@@ -208,7 +210,7 @@ class basic_igzip_streambuf : public basic_streambuf<CharT, Traits>
 		if (err == Z_OK)
 		{
 			zstream.next_in = reinterpret_cast<unsigned char *>(m_in_buffer.data());
-			zstream.avail_in = this->m_upstream->sgetn(m_in_buffer.data(), m_in_buffer.size());
+			zstream.avail_in = static_cast<uInt>(this->m_upstream->sgetn(m_in_buffer.data(), m_in_buffer.size()));
 
 			err = ::inflateGetHeader(&zstream, &header);
 
@@ -234,12 +236,12 @@ class basic_igzip_streambuf : public basic_streambuf<CharT, Traits>
 			while (this->gptr() == this->egptr())
 			{
 				zstream.next_out = reinterpret_cast<unsigned char *>(m_out_buffer.data());
-				zstream.avail_out = kBufferByteSize;
+				zstream.avail_out = static_cast<uInt>(kBufferByteSize);
 
 				if (zstream.avail_in == 0)
 				{
 					zstream.next_in = reinterpret_cast<unsigned char *>(m_in_buffer.data());
-					zstream.avail_in = this->m_upstream->sgetn(m_in_buffer.data(), m_in_buffer.size());
+					zstream.avail_in = static_cast<uInt>(this->m_upstream->sgetn(m_in_buffer.data(), m_in_buffer.size()));
 				}
 
 				int err = ::inflate(&zstream, Z_SYNC_FLUSH);
@@ -248,9 +250,9 @@ class basic_igzip_streambuf : public basic_streambuf<CharT, Traits>
 				if (err == Z_STREAM_END or (err == Z_OK and n > 0))
 				{
 					this->setg(
-						m_out_buffer.begin(),
-						m_out_buffer.begin(),
-						m_out_buffer.begin() + n);
+						m_out_buffer.data(),
+						m_out_buffer.data(),
+						m_out_buffer.data() + n);
 					break;
 				}
 
@@ -315,7 +317,7 @@ class basic_ogzip_streambuf : public basic_streambuf<CharT, Traits>
 		std::swap(m_zstream, rhs.m_zstream);
 		std::swap(m_gzheader, rhs.m_gzheader);
 
-		this->setp(m_in_buffer.begin(), m_in_buffer.end());
+		this->setp(m_in_buffer.data(), m_in_buffer.data() + m_in_buffer.size());
 		this->sputn(rhs.pbase(), rhs.pptr() - rhs.pbase());
 		rhs.setp(nullptr, nullptr);
 	}
@@ -330,7 +332,7 @@ class basic_ogzip_streambuf : public basic_streambuf<CharT, Traits>
 		std::swap(m_zstream, rhs.m_zstream);
 		std::swap(m_gzheader, rhs.m_gzheader);
 
-		this->setp(m_in_buffer.begin(), m_in_buffer.end());
+		this->setp(m_in_buffer.data(), m_in_buffer.data() + m_in_buffer.size());
 		this->sputn(rhs.pbase(), rhs.pptr() - rhs.pbase());
 		rhs.setp(nullptr, nullptr);
 
@@ -389,7 +391,7 @@ class basic_ogzip_streambuf : public basic_streambuf<CharT, Traits>
 			err = ::deflateSetHeader(&zstream, &header);
 
 		if (err == Z_OK)
-			this->setp(this->m_in_buffer.begin(), this->m_in_buffer.end());
+			this->setp(this->m_in_buffer.data(), this->m_in_buffer.data() + this->m_in_buffer.size());
 		else
 			zstream = z_stream_s{};
 
@@ -409,7 +411,7 @@ class basic_ogzip_streambuf : public basic_streambuf<CharT, Traits>
 		auto &zstream = *m_zstream;
 
 		zstream.next_in = reinterpret_cast<unsigned char *>(this->pbase());
-		zstream.avail_in = this->pptr() - this->pbase();
+		zstream.avail_in = static_cast<uInt>(this->pptr() - this->pbase());
 
 		char_type buffer[BufferSize];
 
@@ -438,7 +440,7 @@ class basic_ogzip_streambuf : public basic_streambuf<CharT, Traits>
 			break;
 		}
 
-		this->setp(this->m_in_buffer.begin(), this->m_in_buffer.end());
+		this->setp(this->m_in_buffer.data(), this->m_in_buffer.data() + this->m_in_buffer.size());
 
 		if (not traits_type::eq_int_type(ch, traits_type::eof()))
 		{
@@ -463,6 +465,7 @@ class basic_ogzip_streambuf : public basic_streambuf<CharT, Traits>
 };
 
 // --------------------------------------------------------------------
+#if HAVE_LibLZMA
 
 /// \brief A streambuf class that can be used to decompress xz data
 ///
@@ -497,16 +500,16 @@ class basic_ixz_streambuf : public basic_streambuf<CharT, Traits>
 	{
 		std::swap(m_xzstream, rhs.m_xzstream);
 
-		auto p = std::copy(rhs.gptr(), rhs.egptr(), m_out_buffer.begin());
-		this->setg(m_out_buffer.begin(), m_out_buffer.begin(), p);
+		auto p = std::copy(rhs.gptr(), rhs.egptr(), m_out_buffer.data());
+		this->setg(m_out_buffer.data(), m_out_buffer.data(), p);
 
 		if (m_xzstream and m_xzstream->avail_in > 0)
 		{
 			auto next_in_offset = m_xzstream->next_in - rhs.m_in_buffer.data();
-			std::copy(rhs.m_in_buffer.begin() + next_in_offset,
-				rhs.m_in_buffer.begin() + next_in_offset + m_xzstream->avail_in,
-				m_in_buffer.begin());
-			m_xzstream->next_in = m_in_buffer.begin();
+			std::copy(rhs.m_in_buffer.data() + next_in_offset,
+				rhs.m_in_buffer.data() + next_in_offset + m_xzstream->avail_in,
+				m_in_buffer.data());
+			m_xzstream->next_in = m_in_buffer.data();
 		}
 	}
 
@@ -518,16 +521,16 @@ class basic_ixz_streambuf : public basic_streambuf<CharT, Traits>
 		base_type::operator=(std::move(rhs));
 		std::swap(m_xzstream, rhs.m_xzstream);
 
-		auto p = std::copy(rhs.gptr(), rhs.egptr(), m_out_buffer.begin());
-		this->setg(m_out_buffer.begin(), m_out_buffer.begin(), p);
+		auto p = std::copy(rhs.gptr(), rhs.egptr(), m_out_buffer.data());
+		this->setg(m_out_buffer.data(), m_out_buffer.data(), p);
 
 		if (m_xzstream and m_xzstream->avail_in > 0)
 		{
 			auto next_in_offset = m_xzstream->next_in - reinterpret_cast<unsigned char *>(rhs.m_in_buffer.data());
-			std::copy(rhs.m_in_buffer.begin() + next_in_offset,
-				rhs.m_in_buffer.begin() + next_in_offset + m_xzstream->avail_in,
-				m_in_buffer.begin());
-			m_xzstream->next_in = reinterpret_cast<unsigned char *>(m_in_buffer.begin());
+			std::copy(rhs.m_in_buffer.data() + next_in_offset,
+				rhs.m_in_buffer.data() + next_in_offset + m_xzstream->avail_in,
+				m_in_buffer.data());
+			m_xzstream->next_in = reinterpret_cast<unsigned char *>(m_in_buffer.data());
 		}
 
 		return *this;
@@ -538,7 +541,7 @@ class basic_ixz_streambuf : public basic_streambuf<CharT, Traits>
 		close();
 	}
 
-	/// \brief This closes the zlib stream and sets the get pointers to null.
+	/// \brief This closes the xz stream and sets the get pointers to null.
 	base_type *close() override
 	{
 		if (m_xzstream)
@@ -553,7 +556,7 @@ class basic_ixz_streambuf : public basic_streambuf<CharT, Traits>
 		return this;
 	}
 
-	/// \brief Initialize a zlib stream and set the upstream.
+	/// \brief Initialize a xz stream and set the upstream.
 	///
 	/// \param upstream The upstream streambuf
 	///
@@ -602,9 +605,9 @@ class basic_ixz_streambuf : public basic_streambuf<CharT, Traits>
 				if (err == LZMA_STREAM_END or (err == LZMA_OK and n > 0))
 				{
 					this->setg(
-						m_out_buffer.begin(),
-						m_out_buffer.begin(),
-						m_out_buffer.begin() + n);
+						m_out_buffer.data(),
+						m_out_buffer.data(),
+						m_out_buffer.data() + n);
 					break;
 				}
 
@@ -617,11 +620,11 @@ class basic_ixz_streambuf : public basic_streambuf<CharT, Traits>
 	}
 
   private:
-	/// \brief The zlib internal structures are mainained as pointers to avoid having
+	/// \brief The xz internal structures are mainained as pointers to avoid having
 	/// to copy their content in move constructors.
 	std::unique_ptr<lzma_stream> m_xzstream;
 
-	/// \brief Input buffer, this is the input for zlib
+	/// \brief Input buffer, this is the input for xz
 	std::array<char_type, BufferSize> m_in_buffer;
 
 	/// \brief Output buffer, where the ostream finds the data
@@ -630,13 +633,13 @@ class basic_ixz_streambuf : public basic_streambuf<CharT, Traits>
 
 // --------------------------------------------------------------------
 
-/// \brief A streambuf class that can be used to compress data using zlib
+/// \brief A streambuf class that can be used to compress data using xz
 ///
 /// \tparam CharT		Type of the character stream.
 /// \tparam Traits		Traits for character type, defaults to char_traits<_CharT>.
 /// \tparam BufferSize	The size of the internal buffers.
 ///
-/// This implementation of streambuf can compress (deflate) data using zlib.
+/// This implementation of streambuf can compress (deflate) data using xz.
 
 template <typename CharT, typename Traits, size_t BufferSize = kDefaultBufferSize, std::enable_if_t<sizeof(CharT) == 1, int> = 0>
 class basic_oxz_streambuf : public basic_streambuf<CharT, Traits>
@@ -662,7 +665,7 @@ class basic_oxz_streambuf : public basic_streambuf<CharT, Traits>
 	{
 		std::swap(m_xzstream, rhs.m_xzstream);
 
-		this->setp(m_in_buffer.begin(), m_in_buffer.end());
+		this->setp(m_in_buffer.data(), m_in_buffer.data() + m_in_buffer.size());
 		this->sputn(rhs.pbase(), rhs.pptr() - rhs.pbase());
 		rhs.setp(nullptr, nullptr);
 	}
@@ -676,7 +679,7 @@ class basic_oxz_streambuf : public basic_streambuf<CharT, Traits>
 
 		std::swap(m_xzstream, rhs.m_xzstream);
 
-		this->setp(m_in_buffer.begin(), m_in_buffer.end());
+		this->setp(m_in_buffer.datta(), m_in_buffer.data() + m_in_buffer.size());
 		this->sputn(rhs.pbase(), rhs.pptr() - rhs.pbase());
 		rhs.setp(nullptr, nullptr);
 
@@ -688,7 +691,7 @@ class basic_oxz_streambuf : public basic_streambuf<CharT, Traits>
 		close();
 	}
 
-	/// \brief This closes the zlib stream and sets the put pointers to null.
+	/// \brief This closes the xz stream and sets the put pointers to null.
 	base_type *close() override
 	{
 		if (m_xzstream)
@@ -705,11 +708,11 @@ class basic_oxz_streambuf : public basic_streambuf<CharT, Traits>
 		return this;
 	}
 
-	/// \brief Initialize the internal zlib structures
+	/// \brief Initialize the internal xz structures
 	///
 	/// \param upstream The upstream streambuf
 	///
-	/// The zlib stream is initialized as one that can accept
+	/// The xz stream is initialized as one that can accept
 	/// a gzip header.
 	base_type *init(streambuf_type *upstream) override
 	{
@@ -725,7 +728,7 @@ class basic_oxz_streambuf : public basic_streambuf<CharT, Traits>
 		int err = lzma_easy_encoder(&zstream, 9, LZMA_CHECK_CRC64);
 
 		if (err == LZMA_OK)
-			this->setp(this->m_in_buffer.begin(), this->m_in_buffer.end());
+			this->setp(this->m_in_buffer.data(), this->m_in_buffer.data() + this->m_in_buffer.size());
 
 		return err == LZMA_OK ? this : nullptr;
 	}
@@ -772,7 +775,7 @@ class basic_oxz_streambuf : public basic_streambuf<CharT, Traits>
 			break;
 		}
 
-		this->setp(this->m_in_buffer.begin(), this->m_in_buffer.end());
+		this->setp(this->m_in_buffer.data(), this->m_in_buffer.data() + this->m_in_buffer.size());
 
 		if (not traits_type::eq_int_type(ch, traits_type::eof()))
 		{
@@ -784,13 +787,15 @@ class basic_oxz_streambuf : public basic_streambuf<CharT, Traits>
 	}
 
   private:
-	/// \brief The zlib internal structures are mainained as pointers to avoid having
+	/// \brief The xz internal structures are mainained as pointers to avoid having
 	/// to copy their content in move constructors.
 	std::unique_ptr<lzma_stream> m_xzstream;
 
-	/// \brief Input buffer, this is the input for zlib
+	/// \brief Input buffer, this is the input for xz
 	std::array<char_type, BufferSize> m_in_buffer;
 };
+
+#endif
 
 // --------------------------------------------------------------------
 
@@ -817,7 +822,9 @@ class basic_istream : public std::basic_istream<CharT, Traits>
 	using upstreambuf_type = std::basic_streambuf<char_type, traits_type>;
 
 	using gzip_streambuf_type = basic_igzip_streambuf<char_type, traits_type>;
+#if HAVE_LibLZMA
 	using xz_streambuf_type = basic_ixz_streambuf<char_type, traits_type>;
+#endif
 
 	/// \brief Regular move constructor
 	basic_istream(basic_istream &&rhs)
@@ -880,6 +887,7 @@ class basic_istream : public std::basic_istream<CharT, Traits>
 			if (ch == 0x8b) // Read gzip header
 				m_gxriobuf.reset(new gzip_streambuf_type);
 		}
+#if HAVE_LibLZMA
 		else if (ch == 0xfd and sb->in_avail() >= 5)
 		{
 			sb->sbumpc();
@@ -895,6 +903,7 @@ class basic_istream : public std::basic_istream<CharT, Traits>
 			if (sig[0] == 0x37 and sig[1] == 0x7a and sig[2] == 0x58 and sig[3] == 0x5a)
 				m_gxriobuf.reset(new xz_streambuf_type);
 		}
+#endif
 
 		if (m_gxriobuf)
 		{
@@ -935,7 +944,9 @@ class basic_ifstream : public basic_istream<CharT, Traits>
 	using filebuf_type = std::basic_filebuf<char_type, traits_type>;
 
 	using gzip_streambuf_type = typename base_type::gzip_streambuf_type;
+#if HAVE_LibLZMA
 	using xz_streambuf_type = typename base_type::xz_streambuf_type;
+#endif
 
 	/// \brief Default constructor, does not open a file since none is specified
 	basic_ifstream() = default;
@@ -1014,8 +1025,10 @@ class basic_ifstream : public basic_istream<CharT, Traits>
 		{
 			if (filename.extension() == ".gz")
 				this->m_gxriobuf.reset(new gzip_streambuf_type);
+#if HAVE_LibLZMA
 			else if (filename.extension() == ".xz")
 				this->m_gxriobuf.reset(new xz_streambuf_type);
+#endif
 
 			if (not this->m_gxriobuf)
 			{
@@ -1192,7 +1205,9 @@ class basic_ofstream : public basic_ostream<CharT, Traits>
 
 	using filebuf_type = std::basic_filebuf<char_type, traits_type>;
 	using gzip_streambuf_type = basic_ogzip_streambuf<char_type, traits_type>;
+#if HAVE_LibLZMA
 	using xz_streambuf_type = basic_oxz_streambuf<char_type, traits_type>;
+#endif
 
 	basic_ofstream() = default;
 
@@ -1272,8 +1287,10 @@ class basic_ofstream : public basic_ostream<CharT, Traits>
 		{
 			if (filename.extension() == ".gz")
 				this->m_gxriobuf.reset(new gzip_streambuf_type);
+#if HAVE_LibLZMA
 			else if (filename.extension() == ".xz")
 				this->m_gxriobuf.reset(new xz_streambuf_type);
+#endif
 			else
 				this->m_gxriobuf.reset(nullptr);
 

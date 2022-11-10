@@ -1,0 +1,5 @@
+Version 1.0.1
+- Now compiles on Windows with MSVC
+
+Version 1.0.0
+- Initial release

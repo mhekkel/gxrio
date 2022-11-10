@@ -679,7 +679,7 @@ class basic_oxz_streambuf : public basic_streambuf<CharT, Traits>
 
 		std::swap(m_xzstream, rhs.m_xzstream);
 
-		this->setp(m_in_buffer.datta(), m_in_buffer.data() + m_in_buffer.size());
+		this->setp(m_in_buffer.data(), m_in_buffer.data() + m_in_buffer.size());
 		this->sputn(rhs.pbase(), rhs.pptr() - rhs.pbase());
 		rhs.setp(nullptr, nullptr);
 

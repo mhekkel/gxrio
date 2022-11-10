@@ -89,8 +89,9 @@ target_sources(gxrio INTERFACE
 target_link_libraries(gxrio INTERFACE ${GXRIO_LIBS})
 
 set_target_properties(gxrio PROPERTIES PUBLIC_HEADER include/gxrio.hpp)
-set(HAVE_LibLZMA ${LibLZMA_FOUND})
-target_compile_definitions(gxrio INTERFACE HAVE_LibLZMA)
+if(LibLZMA_FOUND)
+	target_compile_definitions(gxrio INTERFACE HAVE_LibLZMA)
+endif()
 
 # installation
 set(version_config "${CMAKE_CURRENT_BINARY_DIR}/gxrioConfigVersion.cmake")

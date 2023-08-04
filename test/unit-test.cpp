@@ -276,3 +276,26 @@ BOOST_AUTO_TEST_CASE(t_8)
 		BOOST_CHECK(line.compare(line.length() - 13, 13, "Hello, world!") == 0);
 	}
 }
+
+// --------------------------------------------------------------------
+
+BOOST_AUTO_TEST_CASE(t_9)
+{
+	gxrio::ifstream file(gTestDir / "aap.gz");
+
+	BOOST_ASSERT(file.is_open());
+
+	std::string line;
+
+	BOOST_CHECK(getline(file, line));
+	BOOST_TEST(line == "aap");
+
+	BOOST_CHECK(getline(file, line));
+	BOOST_TEST(line == "noot");
+
+	BOOST_CHECK(getline(file, line));
+	BOOST_TEST(line == "mies");
+
+	BOOST_CHECK(not getline(file, line));
+	BOOST_CHECK(file.eof());
+}

@@ -10,12 +10,11 @@ project(gxrio VERSION 1.0.2 LANGUAGES CXX)
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
+include(CTest)
 
 set(CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD 17 CACHE STRING "The minimum version of C++ required for this library")
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-option(ENABLE_TESTING "Build the unit test applications" OFF)
 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers")
@@ -130,9 +129,7 @@ install(
 	FILES cmake/gxrioConfig.cmake "${version_config}"
 	DESTINATION ${CONFIG_LOC})
 
-if(ENABLE_TESTING)
-	enable_testing()
-
+if(BUILD_TESTING)
 	find_package(Boost REQUIRED)
 
 	list(APPEND tests unit-test unit-test-gzip)
@@ -155,4 +152,4 @@ if(ENABLE_TESTING)
 		add_test(NAME ${TEST}
 			COMMAND $<TARGET_FILE:${TEST}> -- ${PROJECT_SOURCE_DIR}/test)
 	endforeach()
-endif(ENABLE_TESTING)
+endif()

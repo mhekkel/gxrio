@@ -1,4 +1,4 @@
 Moved
 =====
 
-This project has moved to https://forge.hekkelman.net/maarten/gxrio.git
+This project has moved to https://codeberg.org/mlhekkelman/gxrio.git
